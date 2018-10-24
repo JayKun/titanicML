@@ -327,7 +327,21 @@ def main():
     # part d: evaluate training error of k-Nearest Neighbors classifier
     # use k = 3, 5, 7 for n_neighbors 
     print('Classifying using k-Nearest Neighbors...')
-    
+    clf_3 = KNeighborsClassifier(n_neighbors=3)
+    clf_5 = KNeighborsClassifier(n_neighbors=5)
+    clf_7 = KNeighborsClassifier(n_neighbors=7)
+    clf_3.fit(X, y)
+    clf_5.fit(X, y)
+    clf_7.fit(X, y)
+    y_pred_3 = clf_3.predict(X)
+    y_pred_5 = clf_5.predict(X)
+    y_pred_7 = clf_7.predict(X)
+    train_error = 1 - metrics.accuracy_score(y, y_pred_3, normalize=True)
+    print('\t-- training error for 3-neighbors: %.3f' % train_error)
+    train_error = 1 - metrics.accuracy_score(y, y_pred_5, normalize=True)
+    print('\t-- training error for 5-neighbors: %.3f' % train_error)
+    train_error = 1 - metrics.accuracy_score(y, y_pred_7, normalize=True)
+    print('\t-- training error for 7-neighbors: %.3f' % train_error)
     ### ========== TODO : END ========== ###
     
     
