@@ -9,6 +9,7 @@ import csv
 import random
 from util import *
 from collections import Counter
+import matplotlib.patches as mpatches
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
@@ -239,7 +240,7 @@ def error(clf, X, y, ntrials=100, test_size=0.2) :
     train_error = 0
     test_error = 0
     for i in range(ntrials):
-        x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+        x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=i)
         clf.fit(x_train, y_train)
         y_pred_train = clf.predict(x_train)
         y_pred_test = clf.predict(x_test)
@@ -385,7 +386,23 @@ def main():
     ### ========== TODO : START ========== ###
     # part g: investigate decision tree classifier with various depths
     print('Investigating depths...')
-    
+    max_depths = list()
+    train_errs = list()
+    test_errs = list()
+    for d in range(1, 21):
+        tree_clf = DecisionTreeClassifier("entropy", max_depth=d)
+        train_err, test_err = error(tree_clf, X, y)
+        max_depths.append(d)
+        train_errs.append(train_err)
+        test_errs.append(test_err)
+    plt.clf()
+    red_patch = mpatches.Patch(color='red', label='Training Errors')
+    green_patch = mpatches.Patch(color='green', label='Test Errors')
+    plt.legend(handles=[red_patch, green_patch])
+    plt.plot(max_depths, train_errs, 'go-', max_depths, test_errs, 'r^-')
+    plt.xlabel("Max depth for Tree classifier")
+    plt.ylabel("Error rates")
+    plt.savefig("4ggraph.pdf")
     ### ========== TODO : END ========== ###
     
     
