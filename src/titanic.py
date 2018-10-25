@@ -236,13 +236,20 @@ def error(clf, X, y, ntrials=100, test_size=0.2) :
     ### ========== TODO : START ========== ###
     # compute cross-validation error over ntrials
     # hint: use train_test_split (be careful of the parameters)
-    
     train_error = 0
-    test_error = 0    
-        
+    test_error = 0
+    for i in range(ntrials):
+        x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+        clf.fit(x_train, y_train)
+        y_pred_train = clf.predict(x_train)
+        y_pred_test = clf.predict(x_test)
+        train_err = 1 - metrics.accuracy_score(y_train, y_pred_train, normalize=True)
+        train_error += train_err
+        test_err = 1 - metrics.accuracy_score(y_test, y_pred_test, normalize=True)
+        test_error += test_err
     ### ========== TODO : END ========== ###
-    
-    return train_error, test_error
+
+    return train_error/ntrials, test_error/ntrials
 
 
 def write_predictions(y_pred, filename, yname=None) :
@@ -265,8 +272,6 @@ def main():
     X = titanic.X; Xnames = titanic.Xnames
     y = titanic.y; yname = titanic.yname
     n,d = X.shape  # n = number of examples, d =  number of features
-    
-    
     
     #========================================
     # part a: plot histograms of each feature
@@ -301,9 +306,9 @@ def main():
     # part c: evaluate training error of Decision Tree classifier
     # use criterion of "entropy" for Information gain 
     print('Classifying using Decision Tree...')
-    clf = DecisionTreeClassifier("entropy")
-    clf.fit(X,y)
-    y_pred = clf.predict(X)
+    tree_clf = DecisionTreeClassifier("entropy")
+    tree_clf.fit(X,y)
+    y_pred = tree_clf.predict(X)
     train_error = 1 - metrics.accuracy_score(y, y_pred, normalize=True)
     print('\t-- training error: %.3f' % train_error)
     ### ========== TODO : END ========== ###
@@ -316,7 +321,7 @@ def main():
     import pydotplus
     from sklearn import tree
     dot_data = StringIO()
-    tree.export_graphviz(clf, out_file=dot_data,
+    tree.export_graphviz(tree_clf, out_file=dot_data,
                          feature_names=Xnames)
     graph = pydotplus.graph_from_dot_data(dot_data.getvalue())
     graph.write_pdf("dtree.pdf") 
@@ -349,7 +354,12 @@ def main():
     ### ========== TODO : START ========== ###
     # part e: use cross-validation to compute average training and test error of classifiers
     print('Investigating various classifiers...')
-    
+    #Decision Tree
+    train_error, test_error = error(tree_clf, X, y)
+    print("Decision Tree has error: ", test_error, train_error)
+    #KNN-5
+    train_error, test_error = error(clf_5, X, y)
+    print("KNN-5 has error: ", test_error, train_error)
     ### ========== TODO : END ========== ###
 
 
@@ -357,7 +367,17 @@ def main():
     ### ========== TODO : START ========== ###
     # part f: use 10-fold cross-validation to find the best value of k for k-Nearest Neighbors classifier
     print('Finding the best k for KNeighbors classifier...')
-    
+    scores = list()
+    k_values = list()
+    for k in range(1,50,2):
+        k_values.append(k)
+        clf = KNeighborsClassifier(n_neighbors=k)
+        score = cross_val_score(clf, X, y, cv=10)
+        scores.append(np.mean(score))
+    plt.plot(k_values, scores)
+    plt.xlabel("k, number of neighbors")
+    plt.ylabel("score")
+    plt.savefig("4fgraph.pdf")
     ### ========== TODO : END ========== ###
     
     
