@@ -123,8 +123,6 @@ class RandomClassifier(Classifier) :
         self.probabilities_["0"] = self.probabilities_["0"]/n
         self.probabilities_["1"] = self.probabilities_["1"]/n
         ### ========== TODO : END ========== ###
-        print("probability for 0 is " + str(self.probabilities_["0"]))
-        print("probability for 1 is " + str(self.probabilities_["1"]))
 
         return self
     
@@ -278,14 +276,14 @@ def main():
     # part a: plot histograms of each feature
     print('Plotting...')
     #for i in range(d) :
-        #plot_histogram(X[:,i], y, Xname=Xnames[i], yname=yname)
+    #    plot_histogram(X[:,i], y, Xname=Xnames[i], yname=yname)
 
     #========================================
     # train Majority Vote classifier on data
     print('Classifying using Majority Vote...')
-    clf = MajorityVoteClassifier() # create MajorityVote classifier, which includes all model parameters
-    clf.fit(X, y)                  # fit training data using the classifier
-    y_pred = clf.predict(X)        # take the classifier and run it on the training data
+    majority_clf = MajorityVoteClassifier() # create MajorityVote classifier, which includes all model parameters
+    majority_clf.fit(X, y)                  # fit training data using the classifier
+    y_pred = majority_clf.predict(X)        # take the classifier and run it on the training data
     train_error = 1 - metrics.accuracy_score(y, y_pred, normalize=True)
     print('\t-- training error: %.3f' % train_error)
     
@@ -294,9 +292,9 @@ def main():
     ### ========== TODO : START ========== ###
     # part b: evaluate training error of Random classifier
     print('Classifying using Random...')
-    clf = RandomClassifier() # create MajorityVote classifier, which includes all model parameters
-    clf.fit(X, y)
-    y_pred = clf.predict(X)
+    random_clf = RandomClassifier() # create MajorityVote classifier, which includes all model parameters
+    random_clf.fit(X, y)
+    y_pred = random_clf.predict(X)
     train_error = 1 - metrics.accuracy_score(y, y_pred, normalize=True)
     print('\t-- training error: %.3f' % train_error)
     ### ========== TODO : END ========== ###
@@ -355,12 +353,18 @@ def main():
     ### ========== TODO : START ========== ###
     # part e: use cross-validation to compute average training and test error of classifiers
     print('Investigating various classifiers...')
+    #MajorityVoteClassifier
+    train_error, test_error = error(majority_clf, X, y)
+    print("MajorityVoteClassifier has training error: ", train_error, "and test error: ", test_error)
+    #Random Classifier
+    train_error, test_error = error(random_clf, X, y)
+    print("RandomClassifer has training error: ", train_error, "and test error: ", test_error)
     #Decision Tree
     train_error, test_error = error(tree_clf, X, y)
-    print("Decision Tree has error: ", test_error, train_error)
+    print("Decision Tree has training error: ", train_error, "and test error: ", test_error)
     #KNN-5
     train_error, test_error = error(clf_5, X, y)
-    print("KNN-5 has error: ", test_error, train_error)
+    print("KNN-5 has training error: ", train_error, "and test error: ", test_error)
     ### ========== TODO : END ========== ###
 
 
@@ -375,7 +379,7 @@ def main():
         clf = KNeighborsClassifier(n_neighbors=k)
         score = cross_val_score(clf, X, y, cv=10)
         scores.append(np.mean(score))
-    plt.plot(k_values, scores)
+    plt.plot(k_values, scores, marker="o")
     plt.xlabel("k, number of neighbors")
     plt.ylabel("score")
     plt.savefig("4fgraph.pdf")
@@ -396,10 +400,10 @@ def main():
         train_errs.append(train_err)
         test_errs.append(test_err)
     plt.clf()
-    red_patch = mpatches.Patch(color='red', label='Training Errors')
-    green_patch = mpatches.Patch(color='green', label='Test Errors')
-    plt.legend(handles=[red_patch, green_patch])
-    plt.plot(max_depths, train_errs, 'go-', max_depths, test_errs, 'r^-')
+
+    plt.plot(max_depths, train_errs, '-b', label='Train Error', marker="o")
+    plt.plot(max_depths, test_errs, '-r', label='Test Error', marker="o")
+    plt.legend(loc='lower left')
     plt.xlabel("Max depth for Tree classifier")
     plt.ylabel("Error rates")
     plt.savefig("4ggraph.pdf")
@@ -410,7 +414,50 @@ def main():
     ### ========== TODO : START ========== ###
     # part h: investigate Decision Tree and k-Nearest Neighbors classifier with various training set sizes
     print('Investigating training set sizes...')
-    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=123)
+    index = []
+    dtTrainErrs = []
+    dtTestErrs = []
+    knnTrainErrs = []
+    knnTestErrs = []
+    plt.clf()
+    tree_clf = DecisionTreeClassifier("entropy", max_depth=3)
+    for i in range(1, 11):
+        index.append(i/10)
+        tree_train_err = 0
+        tree_test_err = 0
+        knn_train_err = 0
+        knn_test_err = 0
+
+        for j in range(100):
+            X_train_inner, _, y_train_inner, _= train_test_split(X_train, y_train, test_size=(1-i*0.1), random_state=i)
+
+            tree_clf.fit(X_train_inner, y_train_inner)
+            clf_7.fit(X_train_inner, y_train_inner)
+            tree_pred = tree_clf.predict(X_train_inner)
+            tree_train_err += 1 - metrics.accuracy_score(y_train_inner, tree_pred, normalize=True)
+            tree_pred = tree_clf.predict(X_test)
+            tree_test_err += 1 - metrics.accuracy_score(y_test, tree_pred, normalize=True)
+
+            knn_pred =clf_7.predict(X_train_inner)
+            knn_train_err += 1 - metrics.accuracy_score(y_train_inner, knn_pred, normalize=True)
+            knn_pred = clf_7.predict(X_test)
+            knn_test_err += 1 - metrics.accuracy_score(y_test, knn_pred, normalize=True)
+
+        dtTrainErrs.append(tree_train_err/100)
+        dtTestErrs.append(tree_test_err/100)
+
+        knnTrainErrs.append(knn_train_err/100)
+        knnTestErrs.append(knn_test_err/100)
+
+    plt.plot(index, dtTrainErrs, label='DT Train Error', marker='o')
+    plt.plot(index, dtTestErrs, label='DT Test Error', marker='o')
+    plt.plot(index, knnTrainErrs, label='KNN Train Error', marker='o')
+    plt.plot(index, knnTestErrs, label='KNN Test Error', marker='o')
+    plt.legend(loc='upper right')
+    plt.xlabel('% of data used for training')
+    plt.ylabel("Error rate")
+    plt.savefig("4hgraph.pdf")
     ### ========== TODO : END ========== ###
     
        
